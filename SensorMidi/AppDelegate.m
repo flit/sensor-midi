@@ -7,12 +7,20 @@
 //
 
 #import "AppDelegate.h"
+#import "DEACentralManager.h"
+#import "YMSCBPeripheral.h"
+#import "DEASensorTag.h"
 
 @implementation AppDelegate
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification
-{
+- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
+    
+    
+    DEACentralManager *centralManager = [DEACentralManager initSharedServiceWithDelegate:self];
+    centralManager.delegate = self;
+//    [self.peripheralTableView reloadData];
+    
 }
 
 @end

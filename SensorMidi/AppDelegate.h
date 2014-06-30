@@ -7,9 +7,12 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import <IOBluetooth/IOBluetooth.h>
 
-@interface AppDelegate : NSObject <NSApplicationDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, CBCentralManagerDelegate>
 
 @property (assign) IBOutlet NSWindow *window;
+
+@property (atomic) IBOutlet NSTextField * connectionStatusField;
 
 @end
