@@ -31,7 +31,7 @@ static DEACentralManager *sharedCentralManager;
 
 + (DEACentralManager *)initSharedServiceWithDelegate:(id)delegate {
     if (sharedCentralManager == nil) {
-        dispatch_queue_t queue = dispatch_queue_create("com.yummymelon.deanna", 0);
+        dispatch_queue_t queue = dispatch_queue_create("com.immosw.sensormidi", 0);
 
         NSArray *nameList = @[@"TI BLE Sensor Tag", @"SensorTag"];
         sharedCentralManager = [[super allocWithZone:NULL] initWithKnownPeripheralNames:nameList
