@@ -11,20 +11,56 @@
 #import "YMSCBPeripheral.h"
 #import "YMSCBCharacteristic.h"
 #import "YMSCBDescriptor.h"
+#import <mach/mach_time.h>
+#import <math.h>
 
 @implementation AppDelegate
 {
+    MIKMIDIDeviceManager * _midiManager;
     MIKMIDIDestinationEndpoint * _selectedDestination;
+    float _r;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    // Insert code here to initialize your application
-    
+    _x = [[SignalSource alloc] initWithName:@"x"];
+    _y = [[SignalSource alloc] initWithName:@"y"];
+    _z = [[SignalSource alloc] initWithName:@"z"];
+    _pitch = [[SignalSource alloc] initWithName:@"pitch"];
+    _yaw = [[SignalSource alloc] initWithName:@"yaw"];
+    _roll = [[SignalSource alloc] initWithName:@"roll"];
+    _signals = @{@"x" : _x, @"y" : _y, @"z" : _z, @"pitch" : _pitch, @"yaw" : _yaw, @"roll" : _roll};
+
+    MIDIGenerator * genX = [[MIDIGenerator alloc] initWithName:@"x"];
+    MIDIGenerator * genY = [[MIDIGenerator alloc] initWithName:@"y"];
+    MIDIGenerator * genZ = [[MIDIGenerator alloc] initWithName:@"z"];
+    genX.signal = _x;
+    genX.allSignals = _signals;
+    genY.signal = _y;
+    genY.allSignals = _signals;
+    genZ.signal = _z;
+    genZ.allSignals = _signals;
+    _generators = @{@"x" : genX, @"y" : genY, @"z" : genZ};
+
+//    __weak AppDelegate * _self = self;
+//    _x.updateBlock = ^(SignalSource * source, float newValue){
+//        NSLog(@"%@", source);
+//    };
+
+    self.sendMidi = @NO;
+
+    self.midiCCArray = [NSMutableArray arrayWithArray:@[@(1), @(2), @(3), @(4)]];
+
+    [_xMidiCCCombo setStringValue:@"1"];
+//    [_xMidiCCCombo selectItemAtIndex:1];
+//    [_xMidiCCCombo selectItemWithObjectValue:@(1)];
+
+    [_sendMidi addObserver:self forKeyPath:@"value" options:NSKeyValueObservingOptionNew context:NULL];
+
+    _midiManager = [MIKMIDIDeviceManager sharedDeviceManager];
     
     DEACentralManager *centralManager = [DEACentralManager initSharedServiceWithDelegate:self];
     centralManager.delegate = self;
-//    [self.peripheralTableView reloadData];
     [centralManager startScan];
     self.connectionStatusField.stringValue = @"Scanning";
 }
@@ -34,10 +70,27 @@
     [self.sensorTag disconnect];
 }
 
++ (NSSet *)keyPathsForValuesAffectingAvailableDestinations
+{
+	return [NSSet setWithObjects:@"midiManager.availableDevices", @"midiManager.virtualDestinations", nil];
+}
+
 - (NSArray *)availableDestinations
 {
     MIKMIDIDeviceManager * deviceManager = [MIKMIDIDeviceManager sharedDeviceManager];
-    return [[deviceManager virtualDestinations] mutableCopy];
+    NSMutableArray * result = [NSMutableArray array];
+    NSArray * devices = [deviceManager.availableDevices mutableCopy];
+    for (MIKMIDIDevice * device in devices)
+    {
+        NSArray * destinations = [device.entities valueForKeyPath:@"@unionOfArrays.destinations"];
+//        for (MIKMIDIDestinationEndpoint * dest in destinations)
+//        {
+//            [result addObject:[NSString stringWithFormat:@"%@: %@", device.name, dest.name]];
+//        }
+        [result addObjectsFromArray:destinations];
+    }
+    [result addObjectsFromArray:deviceManager.virtualDestinations];
+    return result;
 }
 
 - (MIKMIDIDestinationEndpoint *)selectedDestination
@@ -49,6 +102,25 @@
 {
     _selectedDestination = dest;
     NSLog(@"selected dest = %@", dest);
+
+    // Update all the generators' destinations.
+    [self.generators enumerateKeysAndObjectsUsingBlock:^(id key, id gen, BOOL * stop){
+        [gen setDestination:dest];
+    }];
+}
+
+- (IBAction)xMidiCCDidChange:(id)sender
+{
+    NSLog(@"xMidiCCDidChange:new selected value=[%d]%@", (int)[_xMidiCCCombo indexOfSelectedItem], [_xMidiCCCombo stringValue]);
+
+    MIDIGenerator * gen;
+    if (sender == _xMidiCCCombo)
+    {
+        gen = _generators[@"x"];
+    }
+
+    int cc = (int)[[_xMidiCCCombo stringValue] integerValue];
+    gen.midiCC = cc;
 }
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
@@ -126,12 +198,10 @@
         __weak DEAAccelerometerService * accel = sensorTag.accelerometer;
         self.accel = accel;
         [accel turnOn];
+        [accel requestReadPeriod];
+        [accel configPeriod:10];
 
-        _YMS_PERFORM_ON_MAIN_THREAD(^{
-            [accel configPeriod:0];
-        })
-
-        for (NSString *key in @[@"x", @"y", @"z"])
+        for (NSString *key in @[@"x", @"y", @"z", @"period"])
         {
             [accel addObserver:self forKeyPath:key options:NSKeyValueObservingOptionNew context:NULL];
         }
@@ -175,34 +245,84 @@
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    if (object == _accel)
+    if (object == _sendMidi)
+    {
+        [self.generators enumerateKeysAndObjectsUsingBlock:^(id key, id gen, BOOL * stop){
+            [gen setEnabled:_sendMidi.boolValue];
+        }];
+    }
+    else if (object == _accel)
     {
         if ([keyPath isEqualToString:@"x"])
         {
-            _xField.stringValue = [NSString stringWithFormat:@"%0.2f", [_accel.x floatValue]];
+            float xAccel = _accel.x.floatValue;
+            _xField.stringValue = [NSString stringWithFormat:@"%0.2f", xAccel];
+
+            _x.value = _accel.x.floatValue;
+
+//            if (_sendMidi.boolValue && (xAccel > 0.01f))
+//            {
+////                _xAccelDezipper = xAccel;
+//                uint32_t ccNumber = (uint32_t)_xMidiCCCombo.stringValue.integerValue;
+//                uint32_t ccValue = MIN((int)(64.0f + (xAccel * 2.0f * 127.0f)), 127);
+//
+//                struct MIDIPacket packet;
+//                packet.timeStamp = mach_absolute_time();
+//                packet.length = 3;
+//                packet.data[0] = 0xb0;
+//                packet.data[1] = ccNumber;
+//                packet.data[2] = ccValue;
+//    //            NSLog(@"x:cc=%d;v=%d", ccNumber, ccValue);
+//
+//    //            MIKMutableMIDIControlChangeCommand * command = [[MIKMutableMIDIControlChangeCommand alloc] init];
+//    //            command.controllerNumber = _xMidiCCCombo.stringValue.integerValue;
+//    //            command.controllerValue = MIN((int)(64.0f + (xAccel / 2.0f * 127.0f)), 127);
+//
+//                MIKMIDICommand * command = [MIKMIDICommand commandWithMIDIPacket:&packet];
+//                NSLog(@"%@", command);
+//
+//                NSError *error = nil;
+//                if (![_midiManager sendCommands:@[command] toEndpoint:_selectedDestination error:&error]) {
+//                    NSLog(@"Unable to send command %@ to endpoint %@: %@", command, _selectedDestination, error);
+//                }
+//            }
         }
         else if ([keyPath isEqualToString:@"y"])
         {
             _yField.stringValue = [NSString stringWithFormat:@"%0.2f", [_accel.y floatValue]];
+            _y.value = _accel.y.floatValue;
         }
         else if ([keyPath isEqualToString:@"z"])
         {
             _zField.stringValue = [NSString stringWithFormat:@"%0.2f", [_accel.z floatValue]];
+            _z.value = _accel.z.floatValue;
         }
+        else if ([keyPath isEqualToString:@"period"])
+        {
+            int pvalue = (int)([_accel.period floatValue] * 10.0);
+            NSLog(@"accel period = %d ms", pvalue);
+        }
+
+        _r = sqrtf(powf(_x.value, 2.0f) + powf(_y.value, 2.0f) + powf(_z.value, 2.0f));
+
+//        Axr = arccos(Rx/_r);
     }
     else if (object == _gyro)
     {
         if ([keyPath isEqualToString:@"pitch"])
         {
             _pitchField.stringValue = [NSString stringWithFormat:@"%0.2f", [_gyro.pitch floatValue]];
+            _pitch.value = _gyro.pitch.floatValue;
         }
         else if ([keyPath isEqualToString:@"yaw"])
         {
             _yawField.stringValue = [NSString stringWithFormat:@"%0.2f", [_gyro.yaw floatValue]];
+            _yaw.value = _gyro.yaw.floatValue;
         }
         else if ([keyPath isEqualToString:@"roll"])
         {
             _rollField.stringValue = [NSString stringWithFormat:@"%0.2f", [_gyro.roll floatValue]];
+            _roll.value = _gyro.roll.floatValue;
         }
     }
     else if (object == _keys)
@@ -211,4 +331,142 @@
     }
 }
 
+- (NSInteger)numberOfItemsInComboBox:(NSComboBox *)aComboBox
+{
+    return self.midiCCArray.count;
+}
+
+- (id)comboBox:(NSComboBox *)aComboBox objectValueForItemAtIndex:(NSInteger)index
+{
+    return [self.midiCCArray[index] stringValue];
+}
+
 @end
+
+// --------------------------------------------------------------------------------
+
+@implementation SignalSource
+{
+    float _value;
+}
+
+- (id)initWithName:(NSString *)name
+{
+    self = [super init];
+    if (self)
+    {
+        self.name = name;
+        _value = 0.0f;
+    }
+    return self;
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<SignalSource:%@=%f>", _name, _value];
+}
+
+- (float)value
+{
+    return _value;
+}
+
+- (void)setValue:(float)value
+{
+    if (value != _value)
+    {
+        _previousValue = _value;
+        _value = value;
+
+        if (_updateBlock)
+        {
+            __weak SignalSource * this = self;
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                _updateBlock(this, value);
+            });
+        }
+    }
+}
+
+@end
+
+// --------------------------------------------------------------------------------
+
+@implementation MIDIGenerator
+{
+    MIKMIDIDeviceManager * _midiManager;
+    SignalSource * _signal;
+}
+
+- (id)initWithName:(NSString *)name
+{
+    self = [super init];
+    if (self)
+    {
+        self.name = name;
+        _midiManager = [MIKMIDIDeviceManager sharedDeviceManager];
+        _midiChannel = 1;
+        _midiCC = 1;
+    }
+    return self;
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<MIDIGenerator:%@>", _name];
+}
+
+- (SignalSource *)signal
+{
+    return  _signal;
+}
+
+- (void)setSignal:(SignalSource *)signal
+{
+    if (signal == _signal)
+    {
+        return;
+    }
+
+    _signal = signal;
+
+    __weak id _self = self;
+    _signal.updateBlock = ^(SignalSource * source, float newValue){
+            [_self processUpdatedSignal:source withNewValue:newValue];
+        };
+}
+
+- (void)processUpdatedSignal:(SignalSource *)source withNewValue:(float)newValue
+{
+//    NSLog(@"%@", source);
+
+    // Do nothing if output is disabled.
+//    if (!_enabled)
+//    {
+//        return;
+//    }
+
+    if (fabsf(newValue) > 0.01f)// || source.previousValue > 0.01f)
+    {
+        uint32_t ccValue = MIN((int)(64.0f + (newValue * 2.0f * 127.0f)), 127);
+
+        struct MIDIPacket packet;
+        packet.timeStamp = mach_absolute_time();
+        packet.length = 3;
+        packet.data[0] = 0xb0 | ((_midiChannel - 1) & 0xf);
+        packet.data[1] = _midiCC;
+        packet.data[2] = ccValue;
+
+        MIKMIDICommand * command = [MIKMIDICommand commandWithMIDIPacket:&packet];
+        NSLog(@"%@", command);
+
+        NSError *error = nil;
+        if (![_midiManager sendCommands:@[command] toEndpoint:_destination error:&error]) {
+            NSLog(@"Unable to send command %@ to endpoint %@: %@", command, _destination, error);
+        }
+    }
+}
+
+@end
+
+

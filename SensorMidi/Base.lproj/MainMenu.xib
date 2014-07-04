@@ -17,8 +17,10 @@
                 <outlet property="keysField" destination="Dcy-oX-uUB" id="YlY-7h-E41"/>
                 <outlet property="pitchField" destination="SZI-ZB-GbO" id="AVq-BX-O7Y"/>
                 <outlet property="rollField" destination="S8Y-ft-5Hk" id="cay-cr-GYL"/>
+                <outlet property="sendMidiCheckbox" destination="fLU-L0-kIt" id="6Qf-2p-sku"/>
                 <outlet property="window" destination="QvC-M9-y7g" id="gIp-Ho-8D9"/>
                 <outlet property="xField" destination="HzX-KA-alm" id="qCe-TH-JFe"/>
+                <outlet property="xMidiCCCombo" destination="7c2-go-8Gn" id="rgf-Je-RvD"/>
                 <outlet property="yField" destination="THg-XB-QU4" id="erS-Gf-ZsW"/>
                 <outlet property="yawField" destination="BX5-6T-jce" id="pad-vA-fKC"/>
                 <outlet property="zField" destination="M2M-9k-k4d" id="NU4-AT-W4J"/>
@@ -384,8 +386,17 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
+                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NNJ-2F-Pun">
+                        <rect key="frame" x="122" y="399" width="27" height="17"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="CC:" id="fLS-mR-43J">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HzX-KA-alm">
-                        <rect key="frame" x="69" y="399" width="184" height="17"/>
+                        <rect key="frame" x="69" y="399" width="43" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="0" id="QKF-Pi-GJb">
                             <font key="font" metaFont="system"/>
@@ -506,7 +517,7 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="cQ9-Kn-SSW" id="lNF-KO-lNq">
                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="system"/>
+                            <font key="font" metaFont="menu"/>
                             <menu key="menu" title="OtherViews" id="WQu-23-GKh">
                                 <items>
                                     <menuItem title="Item 1" state="on" id="cQ9-Kn-SSW"/>
@@ -552,9 +563,37 @@
                             </binding>
                         </connections>
                     </button>
+                    <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7c2-go-8Gn">
+                        <rect key="frame" x="155" y="393" width="99" height="26"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" completes="NO" usesDataSource="YES" numberOfVisibleItems="5" id="n1b-Jz-VXV">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                        </comboBoxCell>
+                        <connections>
+                            <action selector="xMidiCCDidChange:" target="Voe-Tx-rLC" id="DlB-Nd-hzN"/>
+                            <outlet property="dataSource" destination="Voe-Tx-rLC" id="OiB-mh-AHs"/>
+                        </connections>
+                    </comboBox>
+                    <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fLU-L0-kIt">
+                        <rect key="frame" x="321" y="447" width="53" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="Send" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="D7Z-he-mfh">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <binding destination="Voe-Tx-rLC" name="value" keyPath="sendMidi" id="9zh-gw-0Ak"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
         </window>
+        <customView id="s8B-0l-hT0">
+            <rect key="frame" x="0.0" y="0.0" width="573" height="96"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+        </customView>
         <userDefaultsController representsSharedInstance="YES" id="LJO-8y-gjW"/>
     </objects>
 </document>

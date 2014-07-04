@@ -201,6 +201,7 @@
 		02CAEEB31961E02A00C0B2BC /* YMSCBUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YMSCBUtils.h; sourceTree = "<group>"; };
 		02CAEEB41961E02A00C0B2BC /* YMSCBUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YMSCBUtils.m; sourceTree = "<group>"; };
 		02CAEEE41961E7C500C0B2BC /* IOBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOBluetooth.framework; path = System/Library/Frameworks/IOBluetooth.framework; sourceTree = SDKROOT; };
+		02CAEEE61964BE1C00C0B2BC /* StDezipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StDezipper.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -273,6 +274,7 @@
 			children = (
 				0242522B193BD91000A3E0D1 /* AppDelegate.h */,
 				0242522C193BD91000A3E0D1 /* AppDelegate.m */,
+				02CAEEE61964BE1C00C0B2BC /* StDezipper.h */,
 				0242522E193BD91000A3E0D1 /* MainMenu.xib */,
 				02425231193BD91000A3E0D1 /* Images.xcassets */,
 				02425220193BD91000A3E0D1 /* Supporting Files */,
