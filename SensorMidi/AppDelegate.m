@@ -23,13 +23,26 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    _x = [[SignalSource alloc] initWithName:@"x"];
-    _y = [[SignalSource alloc] initWithName:@"y"];
-    _z = [[SignalSource alloc] initWithName:@"z"];
-    _pitch = [[SignalSource alloc] initWithName:@"pitch"];
-    _yaw = [[SignalSource alloc] initWithName:@"yaw"];
-    _roll = [[SignalSource alloc] initWithName:@"roll"];
-    _signals = @{@"x" : _x, @"y" : _y, @"z" : _z, @"pitch" : _pitch, @"yaw" : _yaw, @"roll" : _roll};
+    _x = [[SignalSource alloc] initWithName:@"x" units:@"g"];
+    _y = [[SignalSource alloc] initWithName:@"y" units:@"g"];
+    _z = [[SignalSource alloc] initWithName:@"z" units:@"g"];
+    _ax = [[SignalSource alloc] initWithName:@"ax" units:@"°"];
+    _ay = [[SignalSource alloc] initWithName:@"ay" units:@"°"];
+    _az = [[SignalSource alloc] initWithName:@"az" units:@"°"];
+    _pitch = [[SignalSource alloc] initWithName:@"pitch" units:@"°/s"];
+    _yaw = [[SignalSource alloc] initWithName:@"yaw" units:@"°/s"];
+    _roll = [[SignalSource alloc] initWithName:@"roll" units:@"°/s"];
+    _signals = @{
+            @"x" : _x,
+            @"y" : _y,
+            @"z" : _z,
+            @"ax" : _ax,
+            @"ay" : _ay,
+            @"az" : _az,
+            @"pitch" : _pitch,
+            @"yaw" : _yaw,
+            @"roll" : _roll
+        };
 
     MIDIGenerator * genX = [[MIDIGenerator alloc] initWithName:@"x"];
     MIDIGenerator * genY = [[MIDIGenerator alloc] initWithName:@"y"];
@@ -58,7 +71,8 @@
     [_sendMidi addObserver:self forKeyPath:@"value" options:NSKeyValueObservingOptionNew context:NULL];
 
     _midiManager = [MIKMIDIDeviceManager sharedDeviceManager];
-    
+
+    self.autoConnect = @YES;
     DEACentralManager *centralManager = [DEACentralManager initSharedServiceWithDelegate:self];
     centralManager.delegate = self;
     [centralManager startScan];
@@ -128,7 +142,6 @@
     switch (central.state)
     {
         case CBCentralManagerStatePoweredOn:
-//            [self.peripheralTableView reloadData];
             break;
 
         case CBCentralManagerStatePoweredOff:
@@ -173,11 +186,15 @@
 
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
-//    DEACentralManager *centralManager = [DEACentralManager sharedService];
-//    __weak DEASensorTag *sensorTag = (DEASensorTag *)[centralManager findPeripheral:peripheral];
-
-
     self.connectionStatusField.stringValue = @"Disconnected";
+
+    if (self.autoConnect.boolValue)
+    {
+        DEACentralManager *centralManager = [DEACentralManager initSharedServiceWithDelegate:self];
+        [centralManager startScan];
+
+        self.connectionStatusField.stringValue = @"Scanning";
+    }
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error
@@ -190,11 +207,11 @@
     DEACentralManager *centralManager = [DEACentralManager sharedService];
     DEASensorTag *sensorTag = (DEASensorTag *)[centralManager findPeripheral:peripheral];
     YMSCBService * yservice = [sensorTag findService:service];
-    NSLog(@"didDiscoverCharacteristicsForService:%@", yservice);
+//    NSLog(@"didDiscoverCharacteristicsForService:%@", yservice);
 
     if (yservice == sensorTag.accelerometer)
     {
-        NSLog(@"discovered accelerometer characteristics!");
+//        NSLog(@"discovered accelerometer characteristics!");
         __weak DEAAccelerometerService * accel = sensorTag.accelerometer;
         self.accel = accel;
         [accel turnOn];
@@ -208,7 +225,7 @@
     }
     else if (yservice == sensorTag.gyroscope)
     {
-        NSLog(@"discovered gyro characteristics!");
+//        NSLog(@"discovered gyro characteristics!");
         DEAGyroscopeService * gyro = sensorTag.gyroscope;
         self.gyro = gyro;
         [gyro turnOn];
@@ -220,7 +237,7 @@
     }
     else if (yservice == sensorTag.simplekeys)
     {
-        NSLog(@"discovered simplekeys characteristics!");
+//        NSLog(@"discovered simplekeys characteristics!");
         DEASimpleKeysService * keys = sensorTag.simplekeys;
         self.keys = keys; // already turned on
         [keys addObserver:self forKeyPath:@"keyValue" options:NSKeyValueObservingOptionNew context:NULL];
@@ -255,47 +272,18 @@
     {
         if ([keyPath isEqualToString:@"x"])
         {
-            float xAccel = _accel.x.floatValue;
-            _xField.stringValue = [NSString stringWithFormat:@"%0.2f", xAccel];
-
             _x.value = _accel.x.floatValue;
-
-//            if (_sendMidi.boolValue && (xAccel > 0.01f))
-//            {
-////                _xAccelDezipper = xAccel;
-//                uint32_t ccNumber = (uint32_t)_xMidiCCCombo.stringValue.integerValue;
-//                uint32_t ccValue = MIN((int)(64.0f + (xAccel * 2.0f * 127.0f)), 127);
-//
-//                struct MIDIPacket packet;
-//                packet.timeStamp = mach_absolute_time();
-//                packet.length = 3;
-//                packet.data[0] = 0xb0;
-//                packet.data[1] = ccNumber;
-//                packet.data[2] = ccValue;
-//    //            NSLog(@"x:cc=%d;v=%d", ccNumber, ccValue);
-//
-//    //            MIKMutableMIDIControlChangeCommand * command = [[MIKMutableMIDIControlChangeCommand alloc] init];
-//    //            command.controllerNumber = _xMidiCCCombo.stringValue.integerValue;
-//    //            command.controllerValue = MIN((int)(64.0f + (xAccel / 2.0f * 127.0f)), 127);
-//
-//                MIKMIDICommand * command = [MIKMIDICommand commandWithMIDIPacket:&packet];
-//                NSLog(@"%@", command);
-//
-//                NSError *error = nil;
-//                if (![_midiManager sendCommands:@[command] toEndpoint:_selectedDestination error:&error]) {
-//                    NSLog(@"Unable to send command %@ to endpoint %@: %@", command, _selectedDestination, error);
-//                }
-//            }
+            _xField.stringValue = _x.valueString;
         }
         else if ([keyPath isEqualToString:@"y"])
         {
-            _yField.stringValue = [NSString stringWithFormat:@"%0.2f", [_accel.y floatValue]];
             _y.value = _accel.y.floatValue;
+            _yField.stringValue = _y.valueString;
         }
         else if ([keyPath isEqualToString:@"z"])
         {
-            _zField.stringValue = [NSString stringWithFormat:@"%0.2f", [_accel.z floatValue]];
             _z.value = _accel.z.floatValue;
+            _zField.stringValue = _z.valueString;
         }
         else if ([keyPath isEqualToString:@"period"])
         {
@@ -303,26 +291,32 @@
             NSLog(@"accel period = %d ms", pvalue);
         }
 
+        // Compute angles.
         _r = sqrtf(powf(_x.value, 2.0f) + powf(_y.value, 2.0f) + powf(_z.value, 2.0f));
+        _ax.value = acosf(_x.value / _r) * 180.0f / M_PI;
+        _ay.value = acosf(_y.value / _r) * 180.0f / M_PI;
+        _az.value = acosf(_z.value / _r) * 180.0f / M_PI;
 
-//        Axr = arccos(Rx/_r);
+        _xAngleField.stringValue = _ax.valueString;
+        _yAngleField.stringValue = _ay.valueString;
+        _zAngleField.stringValue = _az.valueString;
     }
     else if (object == _gyro)
     {
         if ([keyPath isEqualToString:@"pitch"])
         {
-            _pitchField.stringValue = [NSString stringWithFormat:@"%0.2f", [_gyro.pitch floatValue]];
             _pitch.value = _gyro.pitch.floatValue;
+            _pitchField.stringValue = _pitch.valueString;
         }
         else if ([keyPath isEqualToString:@"yaw"])
         {
-            _yawField.stringValue = [NSString stringWithFormat:@"%0.2f", [_gyro.yaw floatValue]];
             _yaw.value = _gyro.yaw.floatValue;
+            _yawField.stringValue = _yaw.valueString;
         }
         else if ([keyPath isEqualToString:@"roll"])
         {
-            _rollField.stringValue = [NSString stringWithFormat:@"%0.2f", [_gyro.roll floatValue]];
             _roll.value = _gyro.roll.floatValue;
+            _rollField.stringValue = _roll.valueString;
         }
     }
     else if (object == _keys)
@@ -350,12 +344,13 @@
     float _value;
 }
 
-- (id)initWithName:(NSString *)name
+- (id)initWithName:(NSString *)name units:(NSString *)units
 {
     self = [super init];
     if (self)
     {
         self.name = name;
+        self.units = units;
         _value = 0.0f;
     }
     return self;
@@ -373,10 +368,17 @@
 
 - (void)setValue:(float)value
 {
+    if (isnan(value))
+    {
+        value = 0.0f;
+    }
+
     if (value != _value)
     {
+        [self willChangeValueForKey:@"value"];
         _previousValue = _value;
         _value = value;
+        [self didChangeValueForKey:@"value"];
 
         if (_updateBlock)
         {
@@ -386,6 +388,23 @@
             });
         }
     }
+}
+
+- (NSString *)valueString
+{
+    if (_units)
+    {
+        return [NSString stringWithFormat:@"%0.2f %@", _value, _units];
+    }
+    else
+    {
+        return [NSString stringWithFormat:@"%0.2f", _value];
+    }
+}
+
++ (NSSet *)keyPathsForValuesAffectingValueString
+{
+    return [NSSet setWithObjects:@"value", nil];
 }
 
 @end
@@ -441,12 +460,16 @@
 //    NSLog(@"%@", source);
 
     // Do nothing if output is disabled.
+    if (!_destination)
+    {
+        return;
+    }
 //    if (!_enabled)
 //    {
 //        return;
 //    }
 
-    if (fabsf(newValue) > 0.01f)// || source.previousValue > 0.01f)
+    if (fabsf(newValue) > 0.01f || source.previousValue > 0.01f)
     {
         uint32_t ccValue = MIN((int)(64.0f + (newValue * 2.0f * 127.0f)), 127);
 

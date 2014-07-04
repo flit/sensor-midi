@@ -16,11 +16,13 @@
 
 /*!
  * Todo list:
- * - generate angles as signals
+ * √ generate angles as signals
  * - rate limit CC generation
- * - add midi generators for all signals
+ * - add midi generators for all signals?
  * - work out and create ui controls for all generators
  * - note generation with velocity
+ * - synthesize midi output in absence of signal update
+ * - low pass filter signal data
  */
 
 /*!
@@ -31,15 +33,19 @@
 //! @brief Name of this signal.
 @property (nonatomic, copy) NSString * name;
 
+@property (nonatomic, copy) NSString * units;
+
 //! @brief Current value for this signal.
 @property (nonatomic) float value;
+
+@property (readonly, nonatomic) NSString * valueString;
 
 @property (readonly, nonatomic) float previousValue;
 
 //! @brief Block invoked when the signal value changes.
 @property (nonatomic, copy) void (^updateBlock)(SignalSource * source, float newValue);
 
-- (id)initWithName:(NSString *)name;
+- (id)initWithName:(NSString *)name units:(NSString *)units;
 
 @end
 
@@ -73,12 +79,16 @@
 @property IBOutlet NSTextField * xField;
 @property IBOutlet NSTextField * yField;
 @property IBOutlet NSTextField * zField;
+@property IBOutlet NSTextField * xAngleField;
+@property IBOutlet NSTextField * yAngleField;
+@property IBOutlet NSTextField * zAngleField;
 @property IBOutlet NSTextField * pitchField;
 @property IBOutlet NSTextField * yawField;
 @property IBOutlet NSTextField * rollField;
 @property IBOutlet NSTextField * keysField;
 @property IBOutlet NSComboBox * xMidiCCCombo;
 @property IBOutlet NSButton * sendMidiCheckbox;
+@property IBOutlet NSButton * autoConnectCheckbox;
 
 @property IBOutlet NSMutableArray * midiCCArray;
 
@@ -89,6 +99,7 @@
 @property DEAGyroscopeService * gyro;
 @property DEASimpleKeysService * keys;
 
+@property NSNumber * autoConnect;
 @property NSNumber * sendMidi;
 
 @property (readonly) NSDictionary * signals;
@@ -96,6 +107,9 @@
 @property SignalSource * x;
 @property SignalSource * y;
 @property SignalSource * z;
+@property SignalSource * ax;
+@property SignalSource * ay;
+@property SignalSource * az;
 @property SignalSource * pitch;
 @property SignalSource * yaw;
 @property SignalSource * roll;
