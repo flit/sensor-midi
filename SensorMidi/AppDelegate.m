@@ -50,6 +50,9 @@
     MIDIGenerator * genAx = [[MIDIGenerator alloc] initWithName:@"ax"];
     MIDIGenerator * genAy = [[MIDIGenerator alloc] initWithName:@"ay"];
     MIDIGenerator * genAz = [[MIDIGenerator alloc] initWithName:@"az"];
+    MIDIGenerator * genPitch = [[MIDIGenerator alloc] initWithName:@"pitch"];
+    MIDIGenerator * genYaw = [[MIDIGenerator alloc] initWithName:@"yaw"];
+    MIDIGenerator * genRoll = [[MIDIGenerator alloc] initWithName:@"roll"];
     genX.signal = _x;
     genX.allSignals = _signals;
     genX.min = -2.0f;
@@ -71,7 +74,26 @@
     genAz.signal = _az;
     genAz.allSignals = _signals;
     genAz.max = 180.0f;
-    _generators = @{@"x" : genX, @"y" : genY, @"z" : genZ, @"ax" : genAx, @"ay" : genAy, @"az" : genAz};
+    genPitch.signal = _pitch;
+    genPitch.allSignals = _signals;
+    genPitch.mode = kGenerateNotes;
+    genYaw.signal = _yaw;
+    genYaw.allSignals = _signals;
+    genYaw.mode = kGenerateNotes;
+    genRoll.signal = _roll;
+    genRoll.allSignals = _signals;
+    genRoll.mode = kGenerateNotes;
+    _generators = @{
+            @"x" : genX,
+            @"y" : genY,
+            @"z" : genZ,
+            @"ax" : genAx,
+            @"ay" : genAy,
+            @"az" : genAz,
+            @"pitch" : genPitch,
+            @"yaw" : genYaw,
+            @"roll" : genRoll
+        };
 
     self.sendMidi = @NO;
 
@@ -455,6 +477,9 @@
     MIKMIDIDeviceManager * _midiManager;
     SignalSource * _signal;
     uint8_t _lastCC;
+    BOOL _isNoteOn;
+    uint8_t _noteNumber;
+    float _lastNoteTriggerValue;
 }
 
 - (id)initWithName:(NSString *)name
@@ -465,6 +490,7 @@
         self.name = name;
         _midiManager = [MIKMIDIDeviceManager sharedDeviceManager];
         _midiChannel = 1;
+        _mode = kGenerateCC;
         _midiCC = 1;
         _min = 0.0f;
         _max = 1.0f;
@@ -514,29 +540,96 @@
         return;
     }
 
-    if (fabsf(newValue) > 0.01f || source.previousValue > 0.01f)
+    struct MIDIPacket packet;
+    packet.timeStamp = mach_absolute_time();
+    MIKMIDICommand * command = nil;
+    NSError *error = nil;
+    if (_mode == kGenerateCC)
     {
-//        float temp = 64.0f + (newValue * 2.0f * 127.0f);
-        float temp = (newValue + _min) * 127.0f / _max;
-        uint32_t ccValue = MAX(0, MIN((int)temp, 127));
-
-        if (ccValue == _lastCC)
+        if (fabsf(newValue) > 0.01f || source.previousValue > 0.01f)
         {
-            return;
+            float temp = (newValue + _min) * 127.0f / _max;
+            uint32_t ccValue = MAX(0, MIN((int)temp, 127));
+
+            if (ccValue == _lastCC)
+            {
+                return;
+            }
+            _lastCC = ccValue;
+
+            packet.length = 3;
+            packet.data[0] = 0xb0 | ((_midiChannel - 1) & 0xf);
+            packet.data[1] = _midiCC & 0x7f;
+            packet.data[2] = ccValue & 0x7f;
+
+            command = [MIKMIDICommand commandWithMIDIPacket:&packet];
+    //        NSLog(@"%@", command);
         }
-        _lastCC = ccValue;
+    }
+    else if (_mode == kGenerateNotes)
+    {
+        const float cutoff = 50.0f;
+        const float max = 300.0f;
+        
+        if (_isNoteOn && fabsf(newValue) > (cutoff + _lastNoteTriggerValue))
+        {
+            // Turn the active note off.
+            packet.length = 3;
+            packet.data[0] = 0x90 | ((_midiChannel - 1) & 0xf);
+            packet.data[1] = _noteNumber & 0x7f;
+            packet.data[2] = 0;
 
-        struct MIDIPacket packet;
-        packet.timeStamp = mach_absolute_time();
-        packet.length = 3;
-        packet.data[0] = 0xb0 | ((_midiChannel - 1) & 0xf);
-        packet.data[1] = _midiCC;
-        packet.data[2] = ccValue;
+            command = [MIKMIDICommand commandWithMIDIPacket:&packet];
+            if (![_midiManager sendCommands:@[command] toEndpoint:_destination error:&error]) {
+                NSLog(@"Unable to send command %@ to endpoint %@: %@", command, _destination, error);
+            }
 
-        MIKMIDICommand * command = [MIKMIDICommand commandWithMIDIPacket:&packet];
-//        NSLog(@"%@", command);
+            _isNoteOn = NO;
+        }
 
-        NSError *error = nil;
+        if (!_isNoteOn && fabsf(newValue) >= cutoff)
+        {
+            float neg = newValue < 0.0f ? -1.0f : 1.0f;
+            float temp = fabsf(newValue) - cutoff;
+            temp = temp * (127 - 60) / max;
+            _noteNumber = 60 + (int)(temp * neg);
+
+            SignalSource * az = (SignalSource *)self.allSignals[@"az"];
+            temp = (az.value + 0) * 127.0f / 180.0f;
+            int velocity = MAX(0, MIN((int)temp, 127));
+
+            packet.length = 3;
+            packet.data[0] = 0x90 | ((_midiChannel - 1) & 0xf);
+            packet.data[1] = _noteNumber & 0x7f;
+            packet.data[2] = velocity & 0x7f;
+
+            command = [MIKMIDICommand commandWithMIDIPacket:&packet];
+
+            _isNoteOn = YES;
+            _lastNoteTriggerValue = newValue;
+        }
+        else if (_isNoteOn && fabsf(newValue) < (_lastNoteTriggerValue / 2.0f))
+        {
+            // Turn the active note off.
+            packet.length = 3;
+            packet.data[0] = 0x90 | ((_midiChannel - 1) & 0xf);
+            packet.data[1] = _noteNumber & 0x7f;
+            packet.data[2] = 0;
+
+            command = [MIKMIDICommand commandWithMIDIPacket:&packet];
+
+            _isNoteOn = NO;
+        }
+
+        if (command)
+        {
+            NSLog(@"%@", command);
+        }
+    }
+
+    // Send MIDI packet.
+    if (command)
+    {
         if (![_midiManager sendCommands:@[command] toEndpoint:_destination error:&error]) {
             NSLog(@"Unable to send command %@ to endpoint %@: %@", command, _destination, error);
         }

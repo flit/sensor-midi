@@ -49,6 +49,12 @@
 
 @end
 
+enum
+{
+    kGenerateCC,
+    kGenerateNotes
+};
+
 /*!
  * @brief Generates MIDI from a signal.
  */
@@ -59,6 +65,8 @@
 @property (nonatomic) SignalSource * signal;
 @property (nonatomic) NSDictionary * allSignals;
 @property (nonatomic, getter=isEnabled) BOOL enabled;
+
+@property (nonatomic) int mode;
 
 @property (nonatomic) uint8_t midiChannel;
 @property (nonatomic) uint8_t midiCC;

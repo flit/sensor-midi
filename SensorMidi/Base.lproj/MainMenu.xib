@@ -837,6 +837,39 @@
                             <binding destination="Voe-Tx-rLC" name="value" keyPath="generators.az.enabled" id="ZNL-Wp-tgN"/>
                         </connections>
                     </button>
+                    <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qVd-LV-iAr">
+                        <rect key="frame" x="340" y="241" width="70" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="Generate" bezelStyle="regularSquare" imagePosition="left" alignment="center" controlSize="small" state="on" inset="2" id="R48-ck-WME">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="smallSystem"/>
+                        </buttonCell>
+                        <connections>
+                            <binding destination="Voe-Tx-rLC" name="value" keyPath="generators.pitch.enabled" id="vLg-m7-ZJw"/>
+                        </connections>
+                    </button>
+                    <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZpH-kZ-Dyz">
+                        <rect key="frame" x="340" y="216" width="70" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="Generate" bezelStyle="regularSquare" imagePosition="left" alignment="center" controlSize="small" state="on" inset="2" id="QQH-bD-qA0">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="smallSystem"/>
+                        </buttonCell>
+                        <connections>
+                            <binding destination="Voe-Tx-rLC" name="value" keyPath="generators.yaw.enabled" id="cx1-30-yiN"/>
+                        </connections>
+                    </button>
+                    <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="isZ-eH-Lx1">
+                        <rect key="frame" x="340" y="191" width="70" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="Generate" bezelStyle="regularSquare" imagePosition="left" alignment="center" controlSize="small" state="on" inset="2" id="6KB-9K-2g9">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="smallSystem"/>
+                        </buttonCell>
+                        <connections>
+                            <binding destination="Voe-Tx-rLC" name="value" keyPath="generators.roll.enabled" id="RR4-Um-jnt"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
         </window>
