@@ -47,26 +47,42 @@
     MIDIGenerator * genX = [[MIDIGenerator alloc] initWithName:@"x"];
     MIDIGenerator * genY = [[MIDIGenerator alloc] initWithName:@"y"];
     MIDIGenerator * genZ = [[MIDIGenerator alloc] initWithName:@"z"];
+    MIDIGenerator * genAx = [[MIDIGenerator alloc] initWithName:@"ax"];
+    MIDIGenerator * genAy = [[MIDIGenerator alloc] initWithName:@"ay"];
+    MIDIGenerator * genAz = [[MIDIGenerator alloc] initWithName:@"az"];
     genX.signal = _x;
     genX.allSignals = _signals;
+    genX.min = -2.0f;
+    genX.max = 2.0f;
     genY.signal = _y;
     genY.allSignals = _signals;
+    genY.min = -2.0f;
+    genY.max = 2.0f;
     genZ.signal = _z;
     genZ.allSignals = _signals;
-    _generators = @{@"x" : genX, @"y" : genY, @"z" : genZ};
-
-//    __weak AppDelegate * _self = self;
-//    _x.updateBlock = ^(SignalSource * source, float newValue){
-//        NSLog(@"%@", source);
-//    };
+    genZ.min = -2.0f;
+    genZ.max = 2.0f;
+    genAx.signal = _ax;
+    genAx.allSignals = _signals;
+    genAx.max = 180.0f;
+    genAy.signal = _ay;
+    genAy.allSignals = _signals;
+    genAy.max = 180.0f;
+    genAz.signal = _az;
+    genAz.allSignals = _signals;
+    genAz.max = 180.0f;
+    _generators = @{@"x" : genX, @"y" : genY, @"z" : genZ, @"ax" : genAx, @"ay" : genAy, @"az" : genAz};
 
     self.sendMidi = @NO;
 
     self.midiCCArray = [NSMutableArray arrayWithArray:@[@(1), @(2), @(3), @(4)]];
 
     [_xMidiCCCombo setStringValue:@"1"];
-//    [_xMidiCCCombo selectItemAtIndex:1];
-//    [_xMidiCCCombo selectItemWithObjectValue:@(1)];
+    [_yMidiCCCombo setStringValue:@"1"];
+    [_zMidiCCCombo setStringValue:@"1"];
+    [_xAngleMidiCCCombo setStringValue:@"1"];
+    [_yAngleMidiCCCombo setStringValue:@"1"];
+    [_zAngleMidiCCCombo setStringValue:@"1"];
 
     [_sendMidi addObserver:self forKeyPath:@"value" options:NSKeyValueObservingOptionNew context:NULL];
 
@@ -123,18 +139,41 @@
     }];
 }
 
-- (IBAction)xMidiCCDidChange:(id)sender
+- (IBAction)midiCCDidChange:(id)sender
 {
-    NSLog(@"xMidiCCDidChange:new selected value=[%d]%@", (int)[_xMidiCCCombo indexOfSelectedItem], [_xMidiCCCombo stringValue]);
+    NSLog(@"midiCCDidChange:new selected value=[%d]%@", (int)[sender indexOfSelectedItem], [sender stringValue]);
 
-    MIDIGenerator * gen;
+    NSString * genName;
     if (sender == _xMidiCCCombo)
     {
-        gen = _generators[@"x"];
+        genName = @"x";
     }
+    else if (sender == _yMidiCCCombo)
+    {
+        genName = @"y";
+    }
+    else if (sender == _zMidiCCCombo)
+    {
+        genName = @"z";
+    }
+    else if (sender == _xAngleMidiCCCombo)
+    {
+        genName = @"ax";
+    }
+    else if (sender == _yAngleMidiCCCombo)
+    {
+        genName = @"ay";
+    }
+    else if (sender == _zAngleMidiCCCombo)
+    {
+        genName = @"az";
+    }
+    MIDIGenerator * gen = _generators[genName];
 
-    int cc = (int)[[_xMidiCCCombo stringValue] integerValue];
+    int cc = (int)[[sender stringValue] integerValue];
     gen.midiCC = cc;
+
+    NSLog(@"set %@ to cc %d", genName, cc);
 }
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central
@@ -415,6 +454,7 @@
 {
     MIKMIDIDeviceManager * _midiManager;
     SignalSource * _signal;
+    uint8_t _lastCC;
 }
 
 - (id)initWithName:(NSString *)name
@@ -426,6 +466,9 @@
         _midiManager = [MIKMIDIDeviceManager sharedDeviceManager];
         _midiChannel = 1;
         _midiCC = 1;
+        _min = 0.0f;
+        _max = 1.0f;
+        _lastCC = 0;
     }
     return self;
 }
@@ -449,6 +492,8 @@
 
     _signal = signal;
 
+//    NSLog(@"setting signal %@ on gen %@", signal, self);
+
     __weak id _self = self;
     _signal.updateBlock = ^(SignalSource * source, float newValue){
             [_self processUpdatedSignal:source withNewValue:newValue];
@@ -457,21 +502,29 @@
 
 - (void)processUpdatedSignal:(SignalSource *)source withNewValue:(float)newValue
 {
-//    NSLog(@"%@", source);
+//    NSLog(@"gen %@ processUpdatedSignal: %@", self, source);
 
     // Do nothing if output is disabled.
     if (!_destination)
     {
         return;
     }
-//    if (!_enabled)
-//    {
-//        return;
-//    }
+    if (!_enabled)
+    {
+        return;
+    }
 
     if (fabsf(newValue) > 0.01f || source.previousValue > 0.01f)
     {
-        uint32_t ccValue = MIN((int)(64.0f + (newValue * 2.0f * 127.0f)), 127);
+//        float temp = 64.0f + (newValue * 2.0f * 127.0f);
+        float temp = (newValue + _min) * 127.0f / _max;
+        uint32_t ccValue = MAX(0, MIN((int)temp, 127));
+
+        if (ccValue == _lastCC)
+        {
+            return;
+        }
+        _lastCC = ccValue;
 
         struct MIDIPacket packet;
         packet.timeStamp = mach_absolute_time();
@@ -481,7 +534,7 @@
         packet.data[2] = ccValue;
 
         MIKMIDICommand * command = [MIKMIDICommand commandWithMIDIPacket:&packet];
-        NSLog(@"%@", command);
+//        NSLog(@"%@", command);
 
         NSError *error = nil;
         if (![_midiManager sendCommands:@[command] toEndpoint:_destination error:&error]) {

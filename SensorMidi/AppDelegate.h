@@ -63,6 +63,9 @@
 @property (nonatomic) uint8_t midiChannel;
 @property (nonatomic) uint8_t midiCC;
 
+@property (nonatomic) float min;
+@property (nonatomic) float max;
+
 - (id)initWithName:(NSString *)name;
 
 - (void)processUpdatedSignal:(SignalSource *)source withNewValue:(float)newValue;
@@ -87,6 +90,11 @@
 @property IBOutlet NSTextField * rollField;
 @property IBOutlet NSTextField * keysField;
 @property IBOutlet NSComboBox * xMidiCCCombo;
+@property IBOutlet NSComboBox * yMidiCCCombo;
+@property IBOutlet NSComboBox * zMidiCCCombo;
+@property IBOutlet NSComboBox * xAngleMidiCCCombo;
+@property IBOutlet NSComboBox * yAngleMidiCCCombo;
+@property IBOutlet NSComboBox * zAngleMidiCCCombo;
 @property IBOutlet NSButton * sendMidiCheckbox;
 @property IBOutlet NSButton * autoConnectCheckbox;
 
@@ -119,6 +127,6 @@
 - (MIKMIDIDestinationEndpoint *)selectedDestination;
 - (void)setSelectedDestination:(id)dest;
 
-- (IBAction)xMidiCCDidChange:(id)sender;
+- (IBAction)midiCCDidChange:(id)sender;
 
 @end
