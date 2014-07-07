@@ -66,6 +66,8 @@
 		02CAEEE21961E02A00C0B2BC /* YMSCBStoredPeripherals.m in Sources */ = {isa = PBXBuildFile; fileRef = 02CAEEB21961E02A00C0B2BC /* YMSCBStoredPeripherals.m */; };
 		02CAEEE31961E02A00C0B2BC /* YMSCBUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 02CAEEB41961E02A00C0B2BC /* YMSCBUtils.m */; };
 		02CAEEE51961E7C500C0B2BC /* IOBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02CAEEE41961E7C500C0B2BC /* IOBluetooth.framework */; };
+		02CAEEE9196A111300C0B2BC /* SignalSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 02CAEEE8196A111300C0B2BC /* SignalSource.m */; };
+		02CAEEEC196A116E00C0B2BC /* MIDIGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 02CAEEEB196A116E00C0B2BC /* MIDIGenerator.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -202,6 +204,12 @@
 		02CAEEB41961E02A00C0B2BC /* YMSCBUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YMSCBUtils.m; sourceTree = "<group>"; };
 		02CAEEE41961E7C500C0B2BC /* IOBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOBluetooth.framework; path = System/Library/Frameworks/IOBluetooth.framework; sourceTree = SDKROOT; };
 		02CAEEE61964BE1C00C0B2BC /* StDezipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StDezipper.h; sourceTree = "<group>"; };
+		02CAEEE7196A111300C0B2BC /* SignalSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SignalSource.h; sourceTree = "<group>"; };
+		02CAEEE8196A111300C0B2BC /* SignalSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SignalSource.m; sourceTree = "<group>"; };
+		02CAEEEA196A116E00C0B2BC /* MIDIGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MIDIGenerator.h; sourceTree = "<group>"; };
+		02CAEEEB196A116E00C0B2BC /* MIDIGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MIDIGenerator.m; sourceTree = "<group>"; };
+		02CAEEED196A12B600C0B2BC /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = SOURCE_ROOT; };
+		02CAEEEE196A12C800C0B2BC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.md; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -278,6 +286,12 @@
 				0242522E193BD91000A3E0D1 /* MainMenu.xib */,
 				02425231193BD91000A3E0D1 /* Images.xcassets */,
 				02425220193BD91000A3E0D1 /* Supporting Files */,
+				02CAEEE7196A111300C0B2BC /* SignalSource.h */,
+				02CAEEE8196A111300C0B2BC /* SignalSource.m */,
+				02CAEEEA196A116E00C0B2BC /* MIDIGenerator.h */,
+				02CAEEEB196A116E00C0B2BC /* MIDIGenerator.m */,
+				02CAEEED196A12B600C0B2BC /* LICENSE */,
+				02CAEEEE196A12C800C0B2BC /* README.md */,
 			);
 			path = SensorMidi;
 			sourceTree = "<group>";
@@ -563,6 +577,7 @@
 				02CAEEC91961E02A00C0B2BC /* MIKMIDIPort.m in Sources */,
 				02CAEECB1961E02A00C0B2BC /* MIKMIDISourceEndpoint.m in Sources */,
 				02CAEECC1961E02A00C0B2BC /* MIKMIDISystemExclusiveCommand.m in Sources */,
+				02CAEEE9196A111300C0B2BC /* SignalSource.m in Sources */,
 				02CAEED21961E02A00C0B2BC /* DEAAccelerometerService.m in Sources */,
 				02CAEECE1961E02A00C0B2BC /* MIKMIDIUtilities.m in Sources */,
 				02CAEEDC1961E02A00C0B2BC /* YMS128.c in Sources */,
@@ -588,6 +603,7 @@
 				02CAEEDE1961E02A00C0B2BC /* YMSCBCharacteristic.m in Sources */,
 				02CAEEDB1961E02A00C0B2BC /* NSMutableArray+fifoQueue.m in Sources */,
 				02CAEEC51961E02A00C0B2BC /* MIKMIDINoteOffCommand.m in Sources */,
+				02CAEEEC196A116E00C0B2BC /* MIDIGenerator.m in Sources */,
 				02CAEEBA1961E02A00C0B2BC /* MIKMIDIDevice.m in Sources */,
 				02425226193BD91000A3E0D1 /* main.m in Sources */,
 				02CAEED01961E02A00C0B2BC /* DEACentralManager.m in Sources */,

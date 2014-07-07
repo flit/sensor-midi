@@ -18,7 +18,6 @@
                 <outlet property="keysField" destination="Dcy-oX-uUB" id="YlY-7h-E41"/>
                 <outlet property="pitchField" destination="SZI-ZB-GbO" id="AVq-BX-O7Y"/>
                 <outlet property="rollField" destination="S8Y-ft-5Hk" id="cay-cr-GYL"/>
-                <outlet property="sendMidiCheckbox" destination="fLU-L0-kIt" id="6Qf-2p-sku"/>
                 <outlet property="window" destination="QvC-M9-y7g" id="gIp-Ho-8D9"/>
                 <outlet property="xAngleField" destination="YLr-9I-fz1" id="9qh-Er-gK1"/>
                 <outlet property="xAngleMidiCCCombo" destination="iJU-uk-hwF" id="fqO-L8-SyH"/>
@@ -639,17 +638,6 @@
                             <outlet property="dataSource" destination="Voe-Tx-rLC" id="OiB-mh-AHs"/>
                         </connections>
                     </comboBox>
-                    <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fLU-L0-kIt">
-                        <rect key="frame" x="506" y="425" width="86" height="18"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <buttonCell key="cell" type="check" title="Send MIDI" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="D7Z-he-mfh">
-                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="system"/>
-                        </buttonCell>
-                        <connections>
-                            <binding destination="Voe-Tx-rLC" name="value" keyPath="sendMidi" id="9zh-gw-0Ak"/>
-                        </connections>
-                    </button>
                     <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="F9S-9h-NAg">
                         <rect key="frame" x="18" y="425" width="106" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
